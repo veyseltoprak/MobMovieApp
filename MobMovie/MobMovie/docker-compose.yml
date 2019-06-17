@@ -1,0 +1,50 @@
+version: '3.4'
+
+networks:
+  dockerapi-dev:
+    driver: bridge 
+
+services:
+  dockerapi:
+    image: dockerapi:latest
+    depends_on:
+      - "sql_image"
+      - "redis_image"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"     
+    environment:
+      DB_CONNECTION_STRING: "Server=sql_image;Database=moviedb;User=sa;Password=Your_password123"
+    networks:
+      - dockerapi-dev  
+  
+  sql_image:
+    image: microsoft/mssql-server-linux
+    container_name: sql_image
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Your_password123
+      - MSSQL_TCP_PORT=1433
+    ports:
+      - "1400:1433"
+    volumes:
+      - db_volume:/var/lib/mssqllib
+      #- ./dbscripts/create.sql :/docker-entrypoint-initdb.d/create.sql
+    #command: --init-file ..\dbscripts\create.sql
+    #command: "sqlcmd -U sa -P Your_password123 -i ..\dbscripts\create.sql"
+    networks:
+      - dockerapi-dev
+
+  redis_image:
+    image: redis
+    container_name: cache
+    ports:
+      - "6379:6379"
+volumes:
+  db_volume:
+    driver: local
+         
+    
+     
